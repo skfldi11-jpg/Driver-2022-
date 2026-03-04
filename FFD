@@ -1,4 +1,3 @@
-```r
 # =====================================================
 # Model2_FFD: Linear Mixed Model with Log Transformation (LMM)
 # Aline's suggestion: log-transform → LMM
