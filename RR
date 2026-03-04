@@ -1,7 +1,7 @@
-# =====================================================
+# ======================================================
 # Model4_RR: Two-part Model
 # Aline's suggestion: logistic GLMM + LMM on log-transformed data
-# =====================================================
+# ======================================================
 
 # Create binary outcome variable
 # ReRead = 1 if RR > 0, ReRead = 0 if RR = 0
