@@ -1,0 +1,123 @@
+# =====================================================
+# Model4_RR: Two-part Model
+# Aline's suggestion: logistic GLMM + LMM on log-transformed data
+# =====================================================
+
+# Create binary outcome variable
+# ReRead = 1 if RR > 0, ReRead = 0 if RR = 0
+df_final$ReRead <- ifelse(df_final$IA_REREADING_TIME > 0, 1, 0)
+
+
+
+# ----------------------------------------------------
+# Part 1: Does rereading occur? (Logistic GLMM)
+# Interpretation: Do emotional texts increase probability of rereading?
+# ----------------------------------------------------
+
+# Step 1: Maximum random structure
+model_rr_part1_full <- glmer(
+  ReRead ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_rr_part1_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: ReRead ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#    958.8   1006.2   -469.4    938.8      837
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -2.7201 -0.8316  0.4037  0.5732  1.4105
+#
+# Random effects:
+#  Groups Name              Variance Std.Dev. Corr
+#  ID     (Intercept)       0.9445   0.9718
+#         ConditionNegative 1.1339   1.0648  -0.11
+#         ConditionPositive 0.4152   0.6443  -0.58  0.48
+#  Item   (Intercept)       0.1016   0.3187
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)        1.0274     0.2471   4.157 3.22e-05 ***
+# ConditionNegative  0.4901     0.3462   1.416    0.157
+# ConditionPositive  0.1449     0.3028   0.479    0.632
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.508
+# ConditnPstv -0.649  0.457
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# No singular fit → model converged successfully
+# → Final adopted model: model_rr_part1_full
+# Result: Neither Negative nor Positive condition significantly affected rereading probability (p > .05)
+
+
+
+
+# ----------------------------------------------------
+# Part 2: How long is the rereading? (LMM)
+# Subset to RR > 0 only, then log-transform
+# Interpretation: Conditional on rereading occurring,
+#                 does emotional valence affect duration?
+# ----------------------------------------------------
+
+df_rr_nonzero <- df_final %>% filter(IA_REREADING_TIME > 0)
+
+# Step 1: Maximum random structure
+model_rr_part2_full <- lmer(
+  log(IA_REREADING_TIME) ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_rr_nonzero
+)
+summary(model_rr_part2_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_REREADING_TIME) ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_rr_nonzero
+#
+# REML criterion at convergence: 1418
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -2.84922 -0.54993  0.08043  0.63837  2.14012
+#
+# Random effects:
+#  Groups   Name              Variance Std.Dev. Corr
+#  ID       (Intercept)       0.21877  0.4677
+#           ConditionNegative 0.23551  0.4853  -0.42
+#           ConditionPositive 0.33258  0.5767  -0.64  0.62
+#  Item     (Intercept)       0.03857  0.1964
+#  Residual                   0.44011  0.6634
+# Number of obs: 615, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)        6.82593    0.11624  30.19898   58.723  <2e-16 ***
+# ConditionNegative  0.05176    0.15038  22.65504    0.344   0.734
+# ConditionPositive  0.03651    0.15691  26.12707    0.233   0.818
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.626
+# ConditnPstv -0.688  0.532
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# No singular fit → model converged successfully
+# → Final adopted model: model_rr_part2_full
+# Result: Neither Negative nor Positive condition significantly affected rereading duration (p > .05)
