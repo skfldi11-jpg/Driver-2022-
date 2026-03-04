@@ -1,1 +1,176 @@
+# =====================================================
+# Model1_Skips: Logistic Mixed Model (GLMM)
+# Aline's suggestion
+# =====================================================
 
+# df_final
+df_final <- df %>%
+  mutate(
+    Condition = relevel(as.factor(Condition), ref = "Neutral"),
+    ID = as.factor(ID),
+    Item = as.factor(Item)
+  )
+
+
+
+# Step 1: Maximum random structure
+model_skip_full <- glmer(
+  IA_SKIP ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_skip_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: IA_SKIP ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#    580.0    627.4   -280.0    560.0      838
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -1.2872 -0.3349 -0.2473 -0.1688  4.4777
+#
+# Random effects:
+#  Groups Name              Variance  Std.Dev. Corr
+#  ID     (Intercept)       0.370765  0.60890
+#         ConditionNegative 0.005586  0.07474  1.00
+#         ConditionPositive 1.353993  1.16361  0.33  0.33
+#  Item   (Intercept)       0.827303  0.90956
+# Number of obs: 848, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)       -2.3788     0.4607  -5.164 2.42e-07 ***
+# ConditionNegative -0.2540     0.6455  -0.394    0.694
+# ConditionPositive -0.4679     0.7082  -0.661    0.509
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.652
+# ConditnPstv -0.605  0.438
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# Singular fit detected → overfitting in random effects
+# Reason: ConditionNegative variance ≈ 0.006 (near zero)
+#         intercept-slope correlation for ID = 1.00 (perfect correlation)
+# → Proceed to Step 2: remove intercept-slope correlation
+
+
+
+
+# Step 2: Remove intercept-slope correlation
+model_skip_reduced <- glmer(
+  IA_SKIP ~ Condition +
+    (1 + Condition || ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_skip_reduced)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: IA_SKIP ~ Condition + (1 + Condition || ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#    581.9    634.1   -280.0    559.9      837
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -1.2921 -0.3345 -0.2503 -0.1684  4.5463
+#
+# Random effects:
+#  Groups Name              Variance Std.Dev. Corr
+#  ID     (Intercept)       0.0000   0.0000
+#  ID.1   ConditionNeutral  0.3604   0.6003
+#         ConditionNegative 0.5013   0.7080   0.98
+#         ConditionPositive 2.1727   1.4740   0.74  0.60
+#  Item   (Intercept)       0.8270   0.9094
+# Number of obs: 848, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)       -2.3750     0.4599  -5.164 2.41e-07 ***
+# ConditionNegative -0.2698     0.6487  -0.416    0.678
+# ConditionPositive -0.4651     0.7051  -0.660    0.509
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.649
+# ConditnPstv -0.604  0.430
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# Singular fit still detected
+# Reason: ID (Intercept) variance = 0.000 (exactly zero)
+#         ConditionNeutral-Negative correlation = 0.98 (still near perfect)
+# → Proceed to Step 3: remove random slopes entirely
+
+
+
+
+# Step 3: Random intercepts only
+model_skip_simple <- glmer(
+  IA_SKIP ~ Condition +
+    (1 | ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_skip_simple)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: IA_SKIP ~ Condition + (1 | ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#    575.7    599.4   -282.9    565.7      843
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -1.1153 -0.3528 -0.2607 -0.1836  4.7546
+#
+# Random effects:
+#  Groups Name        Variance Std.Dev.
+#  ID     (Intercept) 0.6618   0.8135
+#  Item   (Intercept) 0.8209   0.9060
+# Number of obs: 848, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)       -2.46924    0.45138  -5.470 4.49e-08 ***
+# ConditionNegative -0.22500    0.60793  -0.370    0.711
+# ConditionPositive  0.08895    0.59756   0.149    0.882
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.654
+# ConditnPstv -0.677  0.497
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# No singular fit → model converged successfully
+# ID variance: 0.6618 (normal), Item variance: 0.8209 (normal)
+# → Final adopted model: model_skip_simple
+# Result: Neither Negative nor Positive condition significantly affected Skip (p > .05)
