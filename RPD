@@ -1,1 +1,52 @@
+# =====================================================
+# Model2_RPD: Linear Mixed Model with Log Transformation (LMM)
+# Aline's suggestion: log-transform → LMM
+# =====================================================
+
+
+# Step 1: Maximum random structure
+model_rpd_full <- lmer(
+  log(IA_REGRESSION_PATH_DURATION) ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final
+)
+summary(model_rpd_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_REGRESSION_PATH_DURATION) ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_final
+#
+# REML criterion at convergence: 2186.8
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -3.0310 -0.5094 -0.1330  0.3491  4.2320
+#
+# Random effects:
+#  Groups   Name              Variance Std.Dev. Corr
+#  ID       (Intercept)       0.14891  0.3859
+#           ConditionNegative 0.27822  0.5275  -0.30
+#           ConditionPositive 0.20190  0.4493  -0.32  0.17
+#  Item     (Intercept)       0.02954  0.1719
+#  Residual                   0.62779  0.7923
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                    Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)        7.362056   0.101353  26.352794   72.638  <2e-16 ***
+# ConditionNegative  0.133807   0.142037  25.158986    0.942   0.355
+# ConditionPositive -0.009317   0.136086  22.594863   -0.068   0.946
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.587
+# ConditnPstv -0.604  0.415
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# No singular fit → model converged successfully
+# → Final adopted model: model_rpd_full
+# Result: Neither Negative nor Positive condition significantly affected RPD (p > .05)
 
