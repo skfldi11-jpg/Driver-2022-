@@ -1,1 +1,154 @@
+```r
+# =====================================================
+# Model2_FFD: Linear Mixed Model with Log Transformation (LMM)
+# Aline's suggestion: log-transform → LMM
+# =====================================================
 
+df_final <- df %>%
+  mutate(
+    Condition = relevel(as.factor(Condition), ref = "Neutral"),
+    ID = as.factor(ID),
+    Item = as.factor(Item)
+  )
+
+
+
+
+# Step 1: Maximum random structure
+model_ffd_full <- lmer(
+  log(IA_FIRST_FIXATION_DURATION) ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final
+)
+summary(model_ffd_full)
+# Check: singular fit? → if yes, proceed to Step 2
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_FIRST_FIXATION_DURATION) ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_final
+#
+# REML criterion at convergence: 986.8
+#
+# Scaled residuals:
+#     Min       1Q   Median       3Q      Max
+# -2.45358 -0.69655  0.00002  0.61060  3.07789
+#
+# Random effects:
+#  Groups   Name              Variance Std.Dev. Corr
+#  ID       (Intercept)       0.000000 0.00000
+#           ConditionNegative 0.015945 0.12627  NaN
+#           ConditionPositive 0.010733 0.10360  NaN  0.71
+#  Item     (Intercept)       0.003665 0.06054
+#  Residual                   0.175670 0.41913
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)       5.429877   0.035159  15.086270  154.440  <2e-16 ***
+# ConditionNegative 0.050646   0.052974  17.081978    0.956   0.352
+# ConditionPositive -0.002036  0.051867  16.644714   -0.039   0.969
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.664
+# ConditnPstv -0.678  0.520
+# optimizer (nloptwrap) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+# Step 2: Remove intercept-slope correlation
+model_ffd_reduced <- lmer(
+  log(IA_FIRST_FIXATION_DURATION) ~ Condition +
+    (1 + Condition || ID) + (1 | Item),
+  data = df_final
+)
+summary(model_ffd_reduced)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_FIRST_FIXATION_DURATION) ~ Condition + (1 + Condition || ID) + (1 | Item)
+#    Data: df_final
+#
+# REML criterion at convergence: 976
+#
+# Scaled residuals:
+#     Min       1Q   Median       3Q      Max
+# -2.50856 -0.68544 -0.00394  0.61068  2.98506
+#
+# Random effects:
+#  Groups Name              Variance Std.Dev. Corr
+#  ID     (Intercept)       0.012328 0.11103
+#  ID.1   ConditionNeutral  0.000000 0.00000
+#         ConditionNegative 0.003009 0.05486  NaN
+#         ConditionPositive 0.002021 0.04495  NaN -1.00
+#  Item   (Intercept)       0.003809 0.06172
+#  Residual                 0.170509 0.41293
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)       5.429049   0.038725  21.007013  140.196  <2e-16 ***
+# ConditionNegative 0.051382   0.050478  14.650600    1.018   0.325
+# ConditionPositive -0.001573  0.050202  13.927061   -0.031   0.975
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.636
+# ConditnPstv -0.639  0.470
+# optimizer (nloptwrap) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+# Step 3: Random intercepts only
+model_ffd_simple <- lmer(
+  log(IA_FIRST_FIXATION_DURATION) ~ Condition +
+    (1 | ID) + (1 | Item),
+  data = df_final
+)
+summary(model_ffd_simple)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_FIRST_FIXATION_DURATION) ~ Condition + (1 | ID) + (1 | Item)
+#    Data: df_final
+#
+# REML criterion at convergence: 976.5
+#
+# Scaled residuals:
+#     Min       1Q   Median       3Q      Max
+# -2.57183 -0.67681 -0.00483  0.61886  3.05389
+#
+# Random effects:
+#  Groups   Name        Variance Std.Dev.
+#  ID       (Intercept) 0.012284 0.11083
+#  Item     (Intercept) 0.003778 0.06146
+#  Residual             0.172251 0.41503
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)       5.429079   0.038726  21.024148  140.192  <2e-16 ***
+# ConditionNegative 0.050994   0.049861  15.090383    1.023   0.323
+# ConditionPositive -0.001422  0.049798  15.014465   -0.029   0.978
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.644
+# ConditnPstv -0.645  0.501
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# Singular fit persists across all steps
+# → Final adopted model: model_ffd_simple (random intercepts only)
+# Result: Neither Negative nor Positive condition significantly affected FFD (p > .05)
