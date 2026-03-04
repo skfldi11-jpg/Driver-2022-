@@ -1,1 +1,227 @@
+# =====================================================
+# Model4_RFD: Two-part Model
+# Aline's suggestion: logistic GLMM + LMM on log-transformed data
+# =====================================================
+
+# Create binary outcome variable
+# ReFixate = 1 if RFD > 0, ReFixate = 0 if RFD = 0
+df_final$ReFixate <- ifelse(df_final$IA_REFIXATION_DURATION > 0, 1, 0)
+
+
+
+# ----------------------------------------------------
+# Part 1: Does refixation occur? (Logistic GLMM)
+# Interpretation: Do emotional texts increase probability of refixation?
+# ----------------------------------------------------
+
+
+
+# Step 1: Maximum random structure
+model_rfd_part1_full <- glmer(
+  ReFixate ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_rfd_part1_full)
+# Check: singular fit? → if yes, proceed to Step 2
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: ReFixate ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#   1073.8   1121.2   -526.9   1053.8      837
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -2.4208 -1.1502  0.5639  0.6935  1.0763
+#
+# Random effects:
+#  Groups Name              Variance Std.Dev. Corr
+#  ID     (Intercept)       0.37027  0.6085
+#         ConditionNegative 0.02755  0.1660  -0.60
+#         ConditionPositive 0.39058  0.6250  -0.83  0.95
+#  Item   (Intercept)       0.10365  0.3219
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)        0.83838    0.21126   3.968 7.24e-05 ***
+# ConditionNegative  0.06941    0.27228   0.255    0.799
+# ConditionPositive -0.21045    0.28105  -0.749    0.454
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.663
+# ConditnPstv -0.730  0.509
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+# Step 2: Remove intercept-slope correlation
+model_rfd_part1_reduced <- glmer(
+  ReFixate ~ Condition +
+    (1 + Condition || ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_rfd_part1_reduced)
+# Check: singular fit? → if yes, proceed to Step 3
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: ReFixate ~ Condition + (1 + Condition || ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#   1075.8   1128.0   -526.9   1053.8      836
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -2.4208 -1.1502  0.5639  0.6935  1.0763
+#
+# Random effects:
+#  Groups Name              Variance  Std.Dev.  Corr
+#  ID     (Intercept)       1.450e-10 1.204e-05
+#  ID.1   ConditionNeutral  3.703e-01 6.085e-01
+#         ConditionNegative 2.772e-01 5.265e-01  0.97
+#         ConditionPositive 1.330e-01 3.647e-01  0.25  0.49
+#  Item   (Intercept)       1.036e-01 3.219e-01
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)        0.83838    0.21126   3.968 7.24e-05 ***
+# ConditionNegative  0.06941    0.27228   0.255    0.799
+# ConditionPositive -0.21045    0.28105  -0.749    0.454
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.663
+# ConditnPstv -0.730  0.509
+# optimizer (bobyqa) convergence code: 0 (OK)
+# boundary (singular) fit: see help('isSingular')
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+# Step 3: Random intercepts only
+model_rfd_part1_simple <- glmer(
+  ReFixate ~ Condition +
+    (1 | ID) + (1 | Item),
+  data = df_final,
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_rfd_part1_simple)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: ReFixate ~ Condition + (1 | ID) + (1 | Item)
+#    Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+#
+#      AIC      BIC   logLik deviance df.resid
+#   1066.3   1090.1   -528.2   1056.3      842
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -2.2348 -1.1730  0.5846  0.6897  1.1279
+#
+# Random effects:
+#  Groups Name        Variance Std.Dev.
+#  ID     (Intercept) 0.17564  0.4191
+#  Item   (Intercept) 0.09743  0.3121
+# Number of obs: 847, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)
+# (Intercept)        0.80411    0.19394   4.146 3.38e-05 ***
+# ConditionNegative  0.08811    0.25994   0.339    0.735
+# ConditionPositive -0.17029    0.25698  -0.663    0.508
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.666
+# ConditnPstv -0.675  0.502
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# Singular fit persists across Steps 1 and 2
+# → Final adopted model: model_rfd_part1_simple (random intercepts only)
+# Result: Neither Negative nor Positive condition significantly affected refixation probability (p > .05)
+
+
+# ----------------------------------------------------
+# Part 2: How long is the refixation? (LMM)
+# Subset to RFD > 0 only, then log-transform
+# Interpretation: Conditional on refixation occurring,
+#                 does emotional valence affect duration?
+# ----------------------------------------------------
+
+df_rfd_nonzero <- df_final %>% filter(IA_REFIXATION_DURATION > 0)
+
+# Step 1: Maximum random structure
+model_rfd_part2_full <- lmer(
+  log(IA_REFIXATION_DURATION) ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_rfd_nonzero
+)
+summary(model_rfd_part2_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
+# Formula: log(IA_REFIXATION_DURATION) ~ Condition + (1 + Condition | ID) + (1 | Item)
+#    Data: df_rfd_nonzero
+#
+# REML criterion at convergence: 1232.3
+#
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max
+# -3.1061 -0.5451  0.1131  0.6255  2.5781
+#
+# Random effects:
+#  Groups   Name              Variance Std.Dev. Corr
+#  ID       (Intercept)       0.09645  0.3106
+#           ConditionNegative 0.03341  0.1828    0.06
+#           ConditionPositive 0.05670  0.2381   -0.70  0.57
+#  Item     (Intercept)       0.03784  0.1945
+#  Residual                   0.42748  0.6538
+# Number of obs: 571, groups:  ID, 48; Item, 18
+#
+# Fixed effects:
+#                   Estimate Std. Error         df  t value Pr(>|t|)
+# (Intercept)        6.42053    0.10348  20.86700   62.045  <2e-16 ***
+# ConditionNegative -0.05432    0.13395  15.87486   -0.406   0.690
+# ConditionPositive -0.17588    0.13639  16.73067   -1.290   0.215
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.620
+# ConditnPstv -0.692  0.503
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+# No singular fit → model converged successfully
+# → Final adopted model: model_rfd_part2_full
+# Result: Neither Negative nor Positive condition significantly affected refixation duration (p > .05)
 
