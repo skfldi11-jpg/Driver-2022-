@@ -1,1 +1,58 @@
+=====================================================
+Model3_FC: Negative Binomial Mixed Model (GLMM)
+Aline's suggestion: count data → negative binomial GLMM
+=====================================================
 
+# Step 1: Maximum random structure
+if (!require("MASS")) install.packages("MASS")
+library(MASS)
+
+model_fc_full <- glmer.nb(
+  IA_FIXATION_COUNT ~ Condition +
+    (1 + Condition | ID) + (1 | Item),
+  data = df_final,
+  control = glmerControl(optimizer = "bobyqa")
+)
+summary(model_fc_full)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: Negative Binomial(42.2334)  ( log )
+# Formula: IA_FIXATION_COUNT ~ Condition + (1 + Condition | ID) + (1 | Item)
+#   Data: df_final
+# Control: glmerControl(optimizer = "bobyqa")
+# 
+#      AIC      BIC   logLik deviance df.resid 
+#   4333.2   4385.4  -2155.6   4311.2      837 
+# 
+# Scaled residuals:
+#     Min      1Q  Median      3Q     Max 
+# -2.2684 -0.6490 -0.1373  0.4803  4.4568 
+# 
+# Random effects:
+#  Groups Name              Variance Std.Dev. Corr        
+#  ID     (Intercept)       0.13448  0.3667               
+#         ConditionNegative 0.17315  0.4161   -0.47       
+#         ConditionPositive 0.17667  0.4203   -0.47  0.55 
+#  Item   (Intercept)       0.02188  0.1479               
+# Number of obs: 848, groups:  ID, 48; Item, 18
+# 
+# Fixed effects:
+#                   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)        1.90507    0.08434  22.588   <2e-16 ***
+# ConditionNegative  0.03937    0.11059   0.356    0.722    
+# ConditionPositive -0.07210    0.11107  -0.649    0.516    
+# ---
+# Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+# 
+# Correlation of Fixed Effects:
+#             (Intr) CndtnN
+# ConditnNgtv -0.622       
+# ConditnPstv -0.620  0.515
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+# No singular fit → model converged successfully
+# All variances normal, correlations within acceptable range (-0.47, -0.47, 0.55)
+# Result: Neither Negative nor Positive condition significantly affected FC (p > .05)
+# → Final adopted model: model_fc_full
